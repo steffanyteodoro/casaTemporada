@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useTransition } from "react";
 
 const links = [
   { href: "/", label: "Painel", icon: "◗" },
@@ -14,9 +15,18 @@ const links = [
 
 export default function Nav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [pending, start] = useTransition();
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+  function logout() {
+    start(async () => {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+    });
+  }
 
   return (
     <aside className="w-full md:w-60 md:min-h-screen shrink-0 border-b md:border-b-0 md:border-r border-ocean/15 bg-cream/95 backdrop-blur px-4 py-6">
@@ -51,11 +61,19 @@ export default function Nav() {
         })}
       </nav>
 
-      <div className="hidden md:block mt-10 px-2">
+      <div className="hidden md:block mt-10 px-2 space-y-3">
         <div className="rounded-xl bg-ocean/6 border border-ocean/10 px-3 py-3 text-xs text-ocean/60 leading-relaxed">
           <p className="font-semibold text-ocean/80 mb-0.5">MVP — Fase 1</p>
           Reservas manuais &amp; automação de WhatsApp
         </div>
+        <button
+          onClick={logout}
+          disabled={pending}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-ink/50 hover:bg-ocean/8 hover:text-ink transition-all duration-150"
+        >
+          <span className="w-5 text-center text-base">⏻</span>
+          {pending ? "Saindo..." : "Sair"}
+        </button>
       </div>
     </aside>
   );
