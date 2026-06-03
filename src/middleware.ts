@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
 // Rotas que não precisam de autenticação
-const PUBLIC = ["/login", "/api/auth/login", "/api/health"];
+const PUBLIC = ["/login", "/configurar-totp", "/api/auth/login", "/api/health"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

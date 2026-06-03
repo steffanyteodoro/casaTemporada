@@ -6,7 +6,7 @@ const nextConfig = {
   // pg e node-ical usam require dinâmico; mantê-los externos evita
   // que o webpack tente empacotá-los (e quebre no runtime do container).
   experimental: {
-    serverComponentsExternalPackages: ["pg", "node-ical"],
+    serverComponentsExternalPackages: ["pg", "node-ical", "otplib"],
   },
   // Mantém o primeiro build do container suave. Recomenda-se reativar
   // a checagem (false) durante o desenvolvimento para pegar erros cedo.
