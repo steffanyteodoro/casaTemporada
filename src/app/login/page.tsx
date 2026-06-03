@@ -31,8 +31,7 @@ export default function Login() {
       });
       const data = await res.json();
       if (data.ok) {
-        router.push("/");
-        router.refresh();
+        window.location.href = "/";
       } else {
         setErro(data.erro ?? "Erro ao autenticar.");
         if (res.status === 401 && data.erro?.includes("Senha")) {
