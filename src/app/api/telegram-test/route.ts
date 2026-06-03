@@ -5,9 +5,19 @@ export const runtime = "nodejs";
 
 // Endpoint protegido pelo middleware de sessão (chamado pelo painel autenticado).
 export async function POST() {
+  const tokenPresente = !!process.env.TELEGRAM_BOT_TOKEN;
+  const chatPresente = !!process.env.TELEGRAM_CHAT_ID;
+
   if (!telegramConfigurado()) {
     return NextResponse.json(
-      { ok: false, erro: "Configure TELEGRAM_BOT_TOKEN e TELEGRAM_CHAT_ID nas variáveis de ambiente." },
+      {
+        ok: false,
+        erro:
+          `Variáveis não detectadas em runtime — ` +
+          `TELEGRAM_BOT_TOKEN: ${tokenPresente ? "OK" : "FALTANDO"}, ` +
+          `TELEGRAM_CHAT_ID: ${chatPresente ? "OK" : "FALTANDO"}. ` +
+          `No Coolify, marque "Available at Runtime" nessas variáveis e faça redeploy.`,
+      },
       { status: 400 }
     );
   }
@@ -17,5 +27,9 @@ export async function POST() {
     "A partir de agora você receberá aqui os alertas das automações da jornada do hóspede."
   );
 
-  return NextResponse.json(r, { status: r.ok ? 200 : 500 });
+  // Se o Telegram recusar (ex.: você ainda não enviou /start ao bot), repassa o motivo real.
+  return NextResponse.json(
+    r.ok ? { ok: true } : { ok: false, erro: `Telegram recusou: ${r.erro}` },
+    { status: r.ok ? 200 : 500 }
+  );
 }
