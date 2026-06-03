@@ -3,6 +3,7 @@ import { query } from "@/lib/db";
 import { fmtDataHora } from "@/lib/format";
 import { Badge } from "@/components/Badge";
 import { RodarCronBtn } from "./RodarCronBtn";
+import { TestarTelegramBtn } from "./TestarTelegramBtn";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,10 @@ export default async function Mensagens() {
           <p className="label">Automação</p>
           <h2 className="font-display text-3xl text-ink">Mensagens</h2>
         </div>
-        <RodarCronBtn />
+        <div className="flex items-start gap-2">
+          <TestarTelegramBtn />
+          <RodarCronBtn />
+        </div>
       </header>
 
       <section className="mb-10">

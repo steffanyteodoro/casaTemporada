@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { query } from "@/lib/db";
 import { fmtMoeda, fmtData } from "@/lib/format";
 import { Badge } from "@/components/Badge";
@@ -49,8 +50,10 @@ export default async function Financeiro({
               h.nome as hospede_nome
          from reservas r left join hospedes h on h.id = r.hospede_id
         where r.status_reserva <> 'cancelada'
-          and r.origem <> 'bloqueio'
           and r.data_checkin >= $1 and r.data_checkin <= $2
+          -- inclui Airbnb e manuais; bloqueios só entram se tiverem valor
+          -- (reserva direta lançada como bloqueio). Faxina/bloqueio puro fica de fora.
+          and (r.origem <> 'bloqueio' or r.valor is not null)
         order by r.data_checkin asc`,
       [mesInicio, mesFim]
     ),
@@ -331,7 +334,7 @@ export default async function Financeiro({
             <h3 className="font-display text-xl text-ink mb-4">Reservas — {MESES[mes]}/{ano}</h3>
             <div className="card overflow-hidden">
               {receitas.length === 0 ? (
-                <p className="p-6 text-sm text-ocean/60">Nenhuma reserva com valor neste mês.</p>
+                <p className="p-6 text-sm text-ocean/60">Nenhuma reserva neste mês.</p>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
@@ -343,16 +346,34 @@ export default async function Financeiro({
                     </tr>
                   </thead>
                   <tbody>
-                    {receitas.map((r: any) => (
-                      <tr key={r.id} className="border-b border-ocean/10 last:border-0">
-                        <td className="px-4 py-3 font-medium text-ink">{r.hospede_nome ?? "—"}</td>
-                        <td className="px-4 py-3 text-ink/70 text-xs">
-                          {fmtData(r.data_checkin)} → {fmtData(r.data_checkout)}
-                        </td>
-                        <td className="px-4 py-3 font-semibold text-ocean">{fmtMoeda(r.valor)}</td>
-                        <td className="px-4 py-3"><Badge status={r.status_pagamento} /></td>
-                      </tr>
-                    ))}
+                    {receitas.map((r: any) => {
+                      const nome =
+                        r.hospede_nome ??
+                        (r.origem === "airbnb" ? "Hóspede Airbnb" : r.origem === "bloqueio" ? "Reserva direta" : "Sem hóspede");
+                      const semValor = r.valor == null;
+                      return (
+                        <tr key={r.id} className="border-b border-ocean/10 last:border-0 hover:bg-cream/60">
+                          <td className="px-4 py-3 font-medium text-ink">
+                            <Link href={`/reservas/${r.id}`} className="hover:text-ocean hover:underline">
+                              {nome}
+                            </Link>
+                          </td>
+                          <td className="px-4 py-3 text-ink/70 text-xs">
+                            {fmtData(r.data_checkin)} → {fmtData(r.data_checkout)}
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-ocean">
+                            {semValor ? (
+                              <Link href={`/reservas/${r.id}`} className="text-coral text-xs underline">
+                                + adicionar valor
+                              </Link>
+                            ) : (
+                              fmtMoeda(r.valor)
+                            )}
+                          </td>
+                          <td className="px-4 py-3"><Badge status={r.status_pagamento} /></td>
+                        </tr>
+                      );
+                    })}
                     <tr className="bg-ocean/5">
                       <td colSpan={2} className="px-4 py-3 font-semibold text-ink">Total receita</td>
                       <td className="px-4 py-3 font-bold text-ocean">{fmtMoeda(totalReceita)}</td>
