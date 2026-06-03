@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useState, type FormEvent } from "react";
 
 export default function Login() {
-  const router = useRouter();
-  const [pending, start] = useTransition();
+  const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [etapa, setEtapa] = useState<"senha" | "totp">("senha");
   const [senha, setSenha] = useState("");
@@ -17,13 +15,14 @@ export default function Login() {
     setEtapa("totp");
   }
 
-  function onTotp(e: FormEvent<HTMLFormElement>) {
+  async function onTotp(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErro(null);
+    setLoading(true);
     const fd = new FormData(e.currentTarget);
     const codigo = String(fd.get("codigo") ?? "").replace(/\s/g, "");
 
-    start(async () => {
+    try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -34,17 +33,18 @@ export default function Login() {
         window.location.href = "/";
       } else {
         setErro(data.erro ?? "Erro ao autenticar.");
-        if (res.status === 401 && data.erro?.includes("Senha")) {
-          setEtapa("senha");
-        }
+        if (data.erro?.includes("Senha")) setEtapa("senha");
       }
-    });
+    } catch {
+      setErro("Erro de conexão. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        {/* Logo */}
         <div className="text-center mb-8">
           <p className="text-xs tracking-[0.15em] text-ocean/50 font-semibold uppercase">Olímpia · SP</p>
           <h1 className="font-display text-3xl text-ocean mt-1">Casa de<br />Temporada</h1>
@@ -93,22 +93,21 @@ export default function Login() {
                   name="codigo"
                   type="text"
                   inputMode="numeric"
-                  pattern="[0-9\s]{6,7}"
                   required
                   autoFocus
                   autoComplete="one-time-code"
-                  maxLength={7}
+                  maxLength={6}
                   className="input mt-1 text-center text-2xl tracking-[0.5em] font-semibold"
                   placeholder="000000"
                 />
               </div>
-              <button type="submit" disabled={pending} className="btn-primary w-full py-2.5 text-sm">
-                {pending ? "Verificando..." : "Entrar"}
+              <button type="submit" disabled={loading} className="btn-primary w-full py-2.5 text-sm">
+                {loading ? "Verificando..." : "Entrar"}
               </button>
               <button
                 type="button"
                 onClick={() => { setEtapa("senha"); setErro(null); }}
-                className="w-full text-xs text-ocean/50 hover:text-ocean text-center mt-1"
+                className="w-full text-xs text-ocean/50 hover:text-ocean text-center"
               >
                 ← Voltar
               </button>

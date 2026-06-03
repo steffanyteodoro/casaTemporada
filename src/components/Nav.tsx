@@ -18,8 +18,10 @@ export default function Nav() {
   const router = useRouter();
   const [pending, start] = useTransition();
 
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const isActive = (href: string) => {
+    if (!pathname) return false;
+    return href === "/" ? pathname === "/" : pathname.startsWith(href);
+  };
 
   function logout() {
     start(async () => {
