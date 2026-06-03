@@ -34,9 +34,7 @@ export default function ConfigurarTotp() {
   }
 
   const otpauthUrl = gerarOtpauthUrl(secret);
-  // Dois serviços de QR code como fallback
-  const qrPrimario = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=10&data=${encodeURIComponent(otpauthUrl)}`;
-  const qrFallback = `https://chart.googleapis.com/chart?chs=260x260&chld=M|2&cht=qr&chl=${encodeURIComponent(otpauthUrl)}`;
+  const qrUrl = `https://chart.googleapis.com/chart?chs=260x260&chld=M|2&cht=qr&chl=${encodeURIComponent(otpauthUrl)}`;
 
   return (
     <div className="max-w-lg mx-auto py-16 px-4">
@@ -58,12 +56,11 @@ export default function ConfigurarTotp() {
           <div className="flex justify-center mb-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={qrPrimario}
+              src={qrUrl}
               alt="QR Code"
               width={260}
               height={260}
               className="rounded-xl border border-ocean/10"
-              onError={(e) => { (e.target as HTMLImageElement).src = qrFallback; }}
             />
           </div>
           <p className="text-xs text-ocean/50 text-center">
