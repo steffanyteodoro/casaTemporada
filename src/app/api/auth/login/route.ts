@@ -13,11 +13,12 @@ function base32Decode(input: string): Buffer {
   for (const char of cleaned) {
     const idx = chars.indexOf(char);
     if (idx < 0) continue;
-    value = (value << 5) | idx;
+    value = ((value << 5) | idx) >>> 0; // força unsigned 32-bit
     bits += 5;
     if (bits >= 8) {
       output[index++] = (value >>> (bits - 8)) & 0xff;
       bits -= 8;
+      value = value & ((1 << bits) - 1); // limpa bits já extraídos
     }
   }
   return output.slice(0, index);
