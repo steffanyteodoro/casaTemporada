@@ -44,9 +44,11 @@ export async function POST(req: Request) {
     .sign(secret);
 
   const response = NextResponse.json({ ok: true });
+  // secure: false para funcionar em HTTP (sem HTTPS configurado)
+  // Ativar secure:true apenas quando HTTPS estiver configurado
   response.cookies.set("__session", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: false,
     sameSite: "lax",
     maxAge: 60 * 60 * 24,
     path: "/",
