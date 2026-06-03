@@ -1,46 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { jwtVerify } from "jose";
 
 const PUBLIC = ["/login", "/configurar-totp", "/api/auth/login", "/api/health"];
 
-// Verifica JWT usando crypto.subtle nativo do Edge Runtime (sem jose)
 async function tokenValido(token: string, secret: string): Promise<boolean> {
   try {
-    const partes = token.split(".");
-    if (partes.length !== 3) return false;
-
-    const [header, payload, sigB64] = partes;
-
-    // Verifica assinatura HMAC-SHA256
-    const enc = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey(
-      "raw",
-      enc.encode(secret),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["verify"]
-    );
-
-    const sigBytes = Uint8Array.from(
-      atob(sigB64.replace(/-/g, "+").replace(/_/g, "/").padEnd(
-        sigB64.length + (4 - (sigB64.length % 4)) % 4, "="
-      )),
-      (c) => c.charCodeAt(0)
-    );
-
-    const valido = await crypto.subtle.verify(
-      "HMAC",
-      keyMaterial,
-      sigBytes,
-      enc.encode(`${header}.${payload}`)
-    );
-
-    if (!valido) return false;
-
-    // Verifica expiração
-    const dados = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
-    if (dados.exp && dados.exp < Math.floor(Date.now() / 1000)) return false;
-
+    const key = new TextEncoder().encode(secret);
+    await jwtVerify(token, key);
     return true;
   } catch {
     return false;

@@ -8,30 +8,57 @@ export const dynamic = "force-dynamic";
 export default async function Painel() {
   const hoje = new Date().toISOString().slice(0, 10);
 
-  const [proxCheckin, pendentes, totais] = await Promise.all([
-    query<any>(
-      `select r.*, h.nome as hospede_nome
-         from reservas r left join hospedes h on h.id = r.hospede_id
-        where r.status_reserva = 'confirmada' and r.data_checkin >= $1
-        order by r.data_checkin asc limit 5`,
-      [hoje]
-    ),
-    query<any>(
-      `select m.*, h.nome as hospede_nome
-         from mensagens m left join hospedes h on h.id = m.hospede_id
-        where m.status = 'agendada'
-        order by m.agendada_para asc limit 6`
-    ),
-    query<any>(
-      `select count(*)::int as total, coalesce(sum(valor),0) as faturamento
-         from reservas
-        where status_reserva = 'confirmada' and data_checkin >= $1`,
-      [hoje]
-    ),
-  ]);
+  let proxCheckin: any[] = [];
+  let pendentes: any[] = [];
+  let totais: any[] = [];
+  let erroBanco: string | null = null;
+
+  try {
+    [proxCheckin, pendentes, totais] = await Promise.all([
+      query<any>(
+        `select r.*, h.nome as hospede_nome
+           from reservas r left join hospedes h on h.id = r.hospede_id
+          where r.status_reserva = 'confirmada' and r.data_checkin >= $1
+          order by r.data_checkin asc limit 5`,
+        [hoje]
+      ),
+      query<any>(
+        `select m.*, h.nome as hospede_nome
+           from mensagens m left join hospedes h on h.id = m.hospede_id
+          where m.status = 'agendada'
+          order by m.agendada_para asc limit 6`
+      ),
+      query<any>(
+        `select count(*)::int as total, coalesce(sum(valor),0) as faturamento
+           from reservas
+          where status_reserva = 'confirmada' and data_checkin >= $1`,
+        [hoje]
+      ),
+    ]);
+  } catch (e: any) {
+    erroBanco = e?.message ?? "Falha ao conectar ao banco de dados.";
+  }
 
   const totalReservas = totais[0]?.total ?? 0;
   const faturamento = Number(totais[0]?.faturamento ?? 0);
+
+  if (erroBanco) {
+    return (
+      <div>
+        <header className="mb-8">
+          <p className="label">Visão geral</p>
+          <h2 className="font-display text-3xl text-ink">Painel</h2>
+        </header>
+        <div className="card p-6 border-l-4" style={{ borderLeftColor: "#DA4167" }}>
+          <p className="font-semibold text-ink">Não foi possível carregar os dados</p>
+          <p className="text-sm text-ocean/70 mt-1">
+            Houve um problema ao acessar o banco de dados. Tente recarregar a página em instantes.
+          </p>
+          <p className="text-xs text-ocean/40 mt-3 font-mono break-words">{erroBanco}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

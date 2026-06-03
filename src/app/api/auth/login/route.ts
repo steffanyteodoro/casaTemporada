@@ -44,11 +44,11 @@ export async function POST(req: Request) {
     .sign(secret);
 
   const response = NextResponse.json({ ok: true });
-  // secure: false para funcionar em HTTP (sem HTTPS configurado)
-  // Ativar secure:true apenas quando HTTPS estiver configurado
+  // secure controlado por env: false no HTTP (sslip.io), true quando houver HTTPS.
+  // Defina COOKIE_SECURE=true no Coolify após configurar o domínio com SSL.
   response.cookies.set("__session", token, {
     httpOnly: true,
-    secure: false,
+    secure: process.env.COOKIE_SECURE === "true",
     sameSite: "lax",
     maxAge: 60 * 60 * 24,
     path: "/",
