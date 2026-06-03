@@ -2,7 +2,17 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const PUBLIC = ["/login", "/configurar-totp", "/api/auth/login", "/api/health"];
+// Rotas públicas (login) e rotas de API com autenticação própria por token/secret
+// (chamadas por serviços externos: scheduler do WhatsApp e Airbnb).
+const PUBLIC = [
+  "/login",
+  "/configurar-totp",
+  "/api/auth/login",
+  "/api/health",
+  "/api/airbnb-ical", // protegida por AIRBNB_BLOCK_ICAL_SECRET (token na URL)
+  "/api/cron",        // protegida por CRON_SECRET
+  "/api/sync-airbnb", // protegida por CRON_SECRET
+];
 
 async function tokenValido(token: string, secret: string): Promise<boolean> {
   try {
