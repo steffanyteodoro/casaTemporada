@@ -43,7 +43,7 @@ export default async function Financeiro({
   const mesFim = new Date(ano, mes + 1, 0).toISOString().slice(0, 10);
 
   // ── Dados financeiros do mês selecionado ────────────────────
-  const [receitas, despesasMes, todosMeses] = await Promise.all([
+  const [receitas, despesasMes, todosMeses, reservasMes] = await Promise.all([
     query<any>(
       `select r.id, r.data_checkin, r.data_checkout, r.valor, r.status_pagamento, r.origem,
               h.nome as hospede_nome
@@ -68,6 +68,13 @@ export default async function Financeiro({
        where r.status_reserva <> 'cancelada' and r.origem <> 'bloqueio'
          and r.data_checkin >= (current_date - interval '11 months')
        group by 1 order by 1`
+    ),
+    // ocupação do mês selecionado: reservas (incl. Airbnb/bloqueio) que cruzam o mês
+    query<any>(
+      `select data_checkin, data_checkout from reservas
+        where status_reserva <> 'cancelada'
+          and data_checkin <= $2 and data_checkout > $1`,
+      [mesInicio, mesFim]
     ),
   ]);
 
@@ -113,6 +120,13 @@ export default async function Financeiro({
   const ocup60 = diasOcupados(reservas60, daqui30, daqui60);
   const pct30 = Math.round((ocup30 / 30) * 100);
   const pct60 = Math.round((ocup60 / 30) * 100);
+
+  // Ocupação do MÊS SELECIONADO (muda conforme você navega entre os meses)
+  const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+  const primeiroDiaMes = new Date(ano, mes, 1);
+  const ultimoDiaMesExcl = new Date(ano, mes + 1, 1); // exclusivo
+  const ocupMes = diasOcupados(reservasMes, primeiroDiaMes, ultimoDiaMesExcl);
+  const pctMes = Math.round((ocupMes / diasNoMes) * 100);
 
   // Lacunas ≥ 2 dias nos próximos 30 dias
   function lacunas(reservas: any[], inicio: Date, fim: Date) {
@@ -227,17 +241,18 @@ export default async function Financeiro({
           )}
         </div>
         <div className="card p-5">
-          <p className="label">Ocupação (30 dias)</p>
-          <p className="font-display text-2xl text-ink mt-1">{pct30}%</p>
+          <p className="label">Ocupação ({MESES[mes]})</p>
+          <p className="font-display text-2xl text-ink mt-1">{pctMes}%</p>
           <div className="mt-2 h-1.5 rounded-full bg-ocean/10">
             <div
               className="h-1.5 rounded-full transition-all"
               style={{
-                width: `${pct30}%`,
-                background: pct30 >= 70 ? "#10B981" : pct30 >= 40 ? "#F4D35E" : "#DA4167",
+                width: `${pctMes}%`,
+                background: pctMes >= 70 ? "#10B981" : pctMes >= 40 ? "#F4D35E" : "#DA4167",
               }}
             />
           </div>
+          <p className="text-xs text-ocean/60 mt-1">{ocupMes} de {diasNoMes} dias</p>
         </div>
       </div>
 
