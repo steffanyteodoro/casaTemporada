@@ -1,0 +1,49 @@
+# ============================================================
+# docker-compose para deploy no Coolify (sem banco embutido)
+# O PostgreSQL é gerenciado separadamente pelo Coolify.
+# Configure DATABASE_URL nas variáveis de ambiente do serviço.
+# ============================================================
+
+services:
+
+  # ---------- Aplicação Next.js ----------
+  app:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_CRON_SECRET: ${NEXT_PUBLIC_CRON_SECRET:-}
+        NEXT_PUBLIC_AIRBNB_BLOCK_ICAL_SECRET: ${NEXT_PUBLIC_AIRBNB_BLOCK_ICAL_SECRET:-}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      CRON_SECRET: ${CRON_SECRET}
+      NEXT_PUBLIC_CRON_SECRET: ${NEXT_PUBLIC_CRON_SECRET:-}
+      AIRBNB_BLOCK_ICAL_SECRET: ${AIRBNB_BLOCK_ICAL_SECRET:-}
+      NEXT_PUBLIC_AIRBNB_BLOCK_ICAL_SECRET: ${NEXT_PUBLIC_AIRBNB_BLOCK_ICAL_SECRET:-}
+      AIRBNB_ICAL_URL: ${AIRBNB_ICAL_URL:-}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN:-}
+      WHATSAPP_API_VERSION: ${WHATSAPP_API_VERSION:-v20.0}
+      CASA_NOME: ${CASA_NOME:-Casa de Temporada Olímpia}
+    ports:
+      - "${PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ---------- Scheduler (automações WhatsApp + sync Airbnb) ----------
+  scheduler:
+    image: node:20-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      APP_URL: http://app:3000
+      CRON_SECRET: ${CRON_SECRET}
+    volumes:
+      - ./scheduler.mjs:/scheduler.mjs:ro
+    command: ["node", "/scheduler.mjs"]
