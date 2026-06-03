@@ -164,14 +164,16 @@ export default async function Financeiro({
   // Sugestão de preço
   type Sugestao = { tipo: "desconto" | "aumento" | "ok"; texto: string; detalhes: string };
   function gerarSugestao(): Sugestao {
-    if (pct30 < 30) {
-      const desc = pct30 < 15 ? "15–25%" : "8–15%";
+    // Ocupação baixa (< 40%): sugere desconto, mais agressivo quanto mais vazio
+    if (pct30 < 40) {
+      const desc = pct30 < 20 ? "15–25%" : "8–15%";
       return {
         tipo: "desconto",
         texto: `Ocupação baixa — considere reduzir o preço`,
         detalhes: `${pct30}% ocupado nos próximos 30 dias. Desconto sugerido: ${desc} para atrair reservas de curto prazo.`,
       };
     }
+    // Demanda alta (>= 70%): sugere aumento
     if (pct30 >= 70) {
       return {
         tipo: "aumento",
@@ -179,13 +181,15 @@ export default async function Financeiro({
         detalhes: `${pct30}% ocupado nos próximos 30 dias. Aumento sugerido: 10–20% nas datas ainda abertas.`,
       };
     }
-    if (pct30 >= 50 && pct60 < 20) {
+    // Mês atual ok, mas os 30 dias seguintes muito vazios: antecipa promoção
+    if (pct60 < 20) {
       return {
         tipo: "desconto",
         texto: `Próximos 31–60 dias vazios — antecipe promoção`,
-        detalhes: `Mês atual vai bem (${pct30}%), mas os 30 dias seguintes têm apenas ${pct60}% de ocupação. Considere criar uma promoção agora.`,
+        detalhes: `Os próximos 30 dias vão razoavelmente (${pct30}%), mas o período seguinte tem só ${pct60}% de ocupação. Considere criar uma promoção agora para não deixar a agenda esvaziar.`,
       };
     }
+    // Faixa intermediária (40–70%): saudável
     return {
       tipo: "ok",
       texto: `Ocupação saudável — mantenha o preço atual`,
