@@ -71,6 +71,7 @@ export default function Login() {
                   type="password"
                   required
                   autoFocus
+                  autoComplete="current-password"
                   className="input mt-1"
                   placeholder="••••••••"
                 />
@@ -96,6 +97,7 @@ export default function Login() {
                   pattern="[0-9\s]{6,7}"
                   required
                   autoFocus
+                  autoComplete="one-time-code"
                   maxLength={7}
                   className="input mt-1 text-center text-2xl tracking-[0.5em] font-semibold"
                   placeholder="000000"
