@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { authenticator } from "otplib";
 
 export default function ConfigurarTotp() {
